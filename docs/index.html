@@ -1,0 +1,297 @@
+<!doctype html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <script src="libs/gl-matrix.js"></script>
+</head>
+<body>
+<canvas width = "600" height = "600" id = "my_Canvas"></canvas>
+<input type="number" id="iterations_in"> iterations: <span id="iterations_out">100</span>
+
+<script>
+    var numOfIterations = 50;
+    initInput();
+    var canvas = document.getElementById('my_Canvas');
+
+    bindWheelListener(canvas);
+
+    var hold = false;
+    var curX = 0, curY = 0;
+    canvas.onmousedown = mouseDown;
+    canvas.onmousemove = mouseMove;
+    canvas.onmouseup = mouseUp;
+
+    var gl = canvas.getContext('webgl');
+
+    var shaderProgram = initShaders();
+    var len = createGeometryAndBindToBuffer();
+    var translationLocation = gl.getUniformLocation(shaderProgram, "u_translation");
+
+    var scaleLocation = gl.getUniformLocation(shaderProgram, "u_scale");
+    var translation = [0.0, 0.0, 0.0, 0.0];
+    var scale = [1.0, 1.0, 1.0, 1.0];
+
+    bindTexture();
+
+    draw();
+
+    function createGeometryAndBindToBuffer() {
+        var step = 0.005;
+        var ln = (4/step + 1) * 4;
+        var v = new Array(ln);
+        var ptr = 0;
+        var e = 4;
+        for (var i = -2; i <= 2; i += step) {
+            for (var r = -2; r <= 2; r += step) {
+                var iter = 0;
+                var rt = r;
+                var it = i;
+                var arg = r*r + i*i;
+                while (arg < e && iter < numOfIterations) {
+                    var rt2 = rt*rt - it*it + r;
+                    it = 2*rt*it + i;
+                    rt = rt2;
+                    arg = rt*rt + it*it;
+                    iter++;
+                }
+                v[ptr] = r/2;
+                ptr++;
+                v[ptr] = i/2;
+                ptr++;
+                v[ptr] = iter/numOfIterations;
+                ptr++;
+                v[ptr] = 1.0;
+                ptr++;
+            }
+        }
+
+        var vertex_buffer = gl.createBuffer();
+
+        // Bind an empty array buffer to it
+        gl.bindBuffer(gl.ARRAY_BUFFER, vertex_buffer);
+
+        // Pass the vertices data to the buffer
+        gl.bufferData(gl.ARRAY_BUFFER, Float32Array.from(v), gl.STATIC_DRAW);
+
+        return v.length/4;
+    }
+
+    function initShaders() {
+        var vertCode =
+                'attribute vec4 a_position;' +
+                'varying float zz;' +
+                'uniform vec4 u_translation;' +
+                'uniform vec4 u_scale;' +
+                'void main(void) {' +
+                'gl_PointSize = 0.6*u_scale.x;' +
+                'gl_Position = a_position*u_scale + u_translation;' +
+                'zz = a_position.z;' +
+                '}';
+
+        //Create a vertex shader object
+        var vertShader = gl.createShader(gl.VERTEX_SHADER);
+
+        //Attach vertex shader source code
+        gl.shaderSource(vertShader, vertCode);
+
+        //Compile the vertex shader
+        gl.compileShader(vertShader);
+
+        //Fragment shader source code
+        var fragCode =
+                'precision highp float;' +
+                'uniform sampler2D spect;' +
+                'varying float zz;'+
+                'void main(void) {' +
+                'vec4 color = texture2D(spect, vec2(zz, 0.0));' +
+                'gl_FragColor = color;' +
+                '}';
+
+        // Create fragment shader object
+        var fragShader = gl.createShader(gl.FRAGMENT_SHADER);
+
+        // Attach fragment shader source code
+        gl.shaderSource(fragShader, fragCode);
+
+        // Compile the fragment shader
+        gl.compileShader(fragShader);
+
+        console.log(gl.getShaderInfoLog(fragShader));
+        console.log(gl.getShaderInfoLog(vertShader));
+
+        // Create a shader program object to store combined shader program
+        var sProgram = gl.createProgram();
+
+        // Attach a vertex shader
+        gl.attachShader(sProgram, vertShader);
+
+        // Attach a fragment shader
+        gl.attachShader(sProgram, fragShader);
+
+        // Link both programs
+        gl.linkProgram(sProgram);
+
+        // Use the combined shader program object
+        gl.useProgram(sProgram);
+        console.log(gl.getProgramInfoLog(sProgram));
+
+        return sProgram;
+    }
+
+    function draw() {
+
+        // Unbind the buffer
+
+        /* Step3: Create and compile Shader programs */
+
+        /* Step 4: Associate the shader programs to buffer objects */
+
+        //Bind vertex buffer object
+
+        //Get the attribute location
+        var coord = gl.getAttribLocation(shaderProgram, "a_position");
+
+        //point an attribute to the currently bound VBO
+        gl.vertexAttribPointer(coord, 4, gl.FLOAT, false, 0, 0);
+
+        //Enable the attribute
+        gl.enableVertexAttribArray(coord);
+        /* Step5: Drawing the required object (triangle) */
+
+        // Clear the canvas
+        gl.clearColor(0.0, 0.0, 0.0, 1.0);
+
+        // Enable the depth test
+        gl.enable(gl.DEPTH_TEST);
+
+        // Clear the color buffer bit
+        gl.clear(gl.COLOR_BUFFER_BIT);
+
+        // Set the view port
+        gl.viewport(0,0,canvas.width,canvas.height);
+
+        // Set the translation.
+        gl.uniform4fv(translationLocation, translation);
+
+        // Set the scale.
+        gl.uniform4fv(scaleLocation, scale);
+
+        // Draw the triangle
+        gl.drawArrays(gl.POINTS, 0, len);
+    }
+
+    function bindTexture() {
+        var tex = gl.createTexture();
+        gl.bindTexture(gl.TEXTURE_2D, tex);
+        var oneDTextureTexels = new Uint8Array([
+            255,0,0,255,
+            255,128,0,255,
+            255,255,0,255,
+            128,255,0,255,
+            0,255,0,255,
+            0,255,255,255,
+            0,0,255,255,
+            127,0,255,255,
+        ]);
+
+        var width = 8;
+        var height = 1;
+        gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, width, height, 0, gl.RGBA, gl.UNSIGNED_BYTE,
+                oneDTextureTexels);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+    }
+
+    function bindWheelListener(elem) {
+        if (elem.addEventListener) {
+            if ('onwheel' in document) {
+                // IE9+, FF17+
+                elem.addEventListener("wheel", onWheel);
+            } else if ('onmousewheel' in document) {
+                // устаревший вариант события
+                elem.addEventListener("mousewheel", onWheel);
+            } else {
+                // Firefox < 17
+                elem.addEventListener("MozMousePixelScroll", onWheel);
+            }
+        } else { // IE8-
+            elem.attachEvent("onmousewheel", onWheel);
+        }
+
+
+        // Это решение предусматривает поддержку IE8-
+        function onWheel(e) {
+            e = e || window.event;
+
+            // deltaY, detail содержат пиксели
+            // wheelDelta не дает возможность узнать количество пикселей
+            // onwheel || MozMousePixelScroll || onmousewheel
+            var delta = e.deltaY || e.detail || e.wheelDelta;
+
+            var info = document.getElementById('position');
+            scale[0] = scale[1] = scale[0] - delta/1000.0;
+            if (scale[0] < 0.95) {
+                scale[0] = scale[1] = 1.0;
+            } else {
+                var cX = e.x - canvas.width / 2.0;
+                var ncX = cX*(1 - delta/1000.0);
+                var dcX = ((ncX - cX)/600.0)*4.0;
+                translation[0] -= dcX/2.0;
+
+
+                var cY = e.y - canvas.height / 2.0;
+                var ncY = cY*(1 - delta/1000.0);
+                var dcY = ((ncY - cY)/600.0)*4.0;
+                translation[1] += dcY/2.0;
+
+                draw();
+            }
+            e.preventDefault ? e.preventDefault() : (e.returnValue = false);
+        }
+    }
+
+    function mouseDown() {
+        hold = true;
+        curX = window.event.x;
+        curY = window.event.y;
+    }
+
+    function mouseUp() {
+        hold = false;
+    }
+
+    function mouseMove() {
+        if (!hold) {
+            return;
+        }
+        translation[0] -= ((curX - window.event.x)/canvas.width)*2;
+        translation[1] += ((curY - window.event.y)/canvas.height)*2;
+        curX = window.event.x;
+        curY = window.event.y;
+        draw();
+    }
+
+    function initInput() {
+        var input = document.getElementById("iterations_in");
+        input.oninput = function () {
+            var iter = input.value;
+            if (iter < 1) {
+                iter = 1;
+            }
+            if (iter > 100) {
+                iter = 100;
+            }
+            var iter_out = document.getElementById("iterations_out");
+            iter_out.innerHTML = iter;
+            numOfIterations = iter;
+            translation = [0.0, 0.0, 0.0, 0.0];
+            scale = [1.0, 1.0, 1.0, 1.0];
+            len = createGeometryAndBindToBuffer();
+            draw();
+        };
+    }
+
+
+</script>
+
+</body>
+</html>
