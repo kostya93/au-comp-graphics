@@ -1,10 +1,17 @@
 <!doctype html>
 <html>
+<head>
+    <meta charset="utf-8">
+</head>
 <body>
 <canvas width = "600" height = "600" id = "my_Canvas"></canvas>
+Прокрутка: <span id="delta">0</span>
 
 <script>
     var canvas = document.getElementById('my_Canvas');
+
+    bindWheelListener(canvas);
+
     var gl = canvas.getContext('webgl');
     var shaderProgram = initShaders();
 
@@ -166,6 +173,41 @@
                 oneDTextureTexels);
         gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
     }
+
+    function bindWheelListener(elem) {
+        if (elem.addEventListener) {
+            if ('onwheel' in document) {
+                // IE9+, FF17+
+                elem.addEventListener("wheel", onWheel);
+            } else if ('onmousewheel' in document) {
+                // устаревший вариант события
+                elem.addEventListener("mousewheel", onWheel);
+            } else {
+                // Firefox < 17
+                elem.addEventListener("MozMousePixelScroll", onWheel);
+            }
+        } else { // IE8-
+            elem.attachEvent("onmousewheel", onWheel);
+        }
+
+
+        // Это решение предусматривает поддержку IE8-
+        function onWheel(e) {
+            e = e || window.event;
+
+            // deltaY, detail содержат пиксели
+            // wheelDelta не дает возможность узнать количество пикселей
+            // onwheel || MozMousePixelScroll || onmousewheel
+            var delta = e.deltaY || e.detail || e.wheelDelta;
+
+            var info = document.getElementById('delta');
+
+            info.innerHTML = +info.innerHTML + delta;
+
+            e.preventDefault ? e.preventDefault() : (e.returnValue = false);
+        }
+    }
+
 
 </script>
 
