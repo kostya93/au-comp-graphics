@@ -33,8 +33,6 @@
 
     bindTexture();
 
-    draw();
-
     function createGeometryAndBindToBuffer() {
         var step = 0.005;
         var ln = (4/step + 1) * 4;
@@ -138,7 +136,7 @@
         return sProgram;
     }
 
-    function draw() {
+    var draw = window.setInterval(function () {
 
         // Unbind the buffer
 
@@ -178,7 +176,8 @@
 
         // Draw the triangle
         gl.drawArrays(gl.POINTS, 0, len);
-    }
+    }, 50);
+
 
     function bindTexture() {
         var tex = gl.createTexture();
@@ -228,22 +227,22 @@
             var delta = e.deltaY || e.detail || e.wheelDelta;
 
             var info = document.getElementById('position');
-            scale[0] = scale[1] = scale[0] - delta/1000.0;
+            var delta_scale = - delta/1000.0;
+            var old_scale_x = scale[0];
+            var old_scale_y = scale[1];
+            scale[0] = scale[1] = scale[0] + delta_scale;
             if (scale[0] < 0.95) {
                 scale[0] = scale[1] = 1.0;
             } else {
-                var cX = e.x - canvas.width / 2.0;
-                var ncX = cX*(1 - delta/1000.0);
-                var dcX = ((ncX - cX)/600.0)*4.0;
-                translation[0] -= dcX/2.0;
+                var DXP = (e.x - (canvas.width/2.0)*(translation[0] + 1.0));
+                var dXP = (DXP/old_scale_x)*scale[0] - DXP;
+                var dXC = dXP/(canvas.width/2.0);
+                translation[0] -= dXC;
 
-
-                var cY = e.y - canvas.height / 2.0;
-                var ncY = cY*(1 - delta/1000.0);
-                var dcY = ((ncY - cY)/600.0)*4.0;
-                translation[1] += dcY/2.0;
-
-                draw();
+                var DYP = (e.y - (canvas.height/2.0)*(1.0 - translation[1]));
+                var dYP = DYP*((scale[1]/old_scale_y) - 1.0);
+                var dYC = dYP/(canvas.height/2.0);
+                translation[1] += dYC;
             }
             e.preventDefault ? e.preventDefault() : (e.returnValue = false);
         }
@@ -267,7 +266,6 @@
         translation[1] += ((curY - window.event.y)/canvas.height)*2;
         curX = window.event.x;
         curY = window.event.y;
-        draw();
     }
 
     function initInput() {
@@ -286,7 +284,6 @@
             translation = [0.0, 0.0, 0.0, 0.0];
             scale = [1.0, 1.0, 1.0, 1.0];
             len = createGeometryAndBindToBuffer();
-            draw();
         };
     }
 
