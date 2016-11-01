@@ -295,9 +295,11 @@
             var iter = input.value;
             if (iter < 1) {
                 iter = 1;
+                this.value = iter;
             }
             if (iter > 100) {
                 iter = 100;
+                this.value = iter;
             }
             var iter_out = document.getElementById("iterations_out");
             iter_out.innerHTML = iter;
