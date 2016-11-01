@@ -9,7 +9,6 @@
 <input type="number" id="iterations_in"> iterations: <span id="iterations_out">100</span>
 
 <script>
-    var numOfIterations = 50;
     initInput();
     var canvas = document.getElementById('my_Canvas');
 
@@ -24,67 +23,47 @@
     var gl = canvas.getContext('webgl');
 
     var shaderProgram = initShaders();
-    var len = createGeometryAndBindToBuffer();
-    var translationLocation = gl.getUniformLocation(shaderProgram, "u_translation");
 
+    var translationLocation = gl.getUniformLocation(shaderProgram, "u_translation");
+    var maxIterLocation = gl.getUniformLocation(shaderProgram, 'max_iterations');
     var scaleLocation = gl.getUniformLocation(shaderProgram, "u_scale");
+    var max_iter = 100;
     var translation = [0.0, 0.0, 0.0, 0.0];
     var scale = [1.0, 1.0, 1.0, 1.0];
+
+    createGeometryAndBindToBuffer();
 
     bindTexture();
 
     function createGeometryAndBindToBuffer() {
-        var step = 0.005;
-        var ln = (4/step + 1) * 4;
-        var v = new Array(ln);
-        var ptr = 0;
-        var e = 4;
-        for (var i = -2; i <= 2; i += step) {
-            for (var r = -2; r <= 2; r += step) {
-                var iter = 0;
-                var rt = r;
-                var it = i;
-                var arg = r*r + i*i;
-                while (arg < e && iter < numOfIterations) {
-                    var rt2 = rt*rt - it*it + r;
-                    it = 2*rt*it + i;
-                    rt = rt2;
-                    arg = rt*rt + it*it;
-                    iter++;
-                }
-                v[ptr] = r/2;
-                ptr++;
-                v[ptr] = i/2;
-                ptr++;
-                v[ptr] = iter/numOfIterations;
-                ptr++;
-                v[ptr] = 1.0;
-                ptr++;
-            }
-        }
-
         var vertex_buffer = gl.createBuffer();
 
         // Bind an empty array buffer to it
         gl.bindBuffer(gl.ARRAY_BUFFER, vertex_buffer);
 
         // Pass the vertices data to the buffer
-        gl.bufferData(gl.ARRAY_BUFFER, Float32Array.from(v), gl.STATIC_DRAW);
-
-        return v.length/4;
+        var positions = [
+            -1, -1,
+            -1, 1,
+            1, 1,
+            -1, -1,
+            1, 1,
+            1, -1
+        ];
+        gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(positions), gl.STATIC_DRAW);
     }
 
     function initShaders() {
-        var vertCode =
-                'attribute vec4 a_position;' +
-                'varying float zz;' +
-                'uniform vec4 u_translation;' +
-                'uniform vec4 u_scale;' +
-                'void main(void) {' +
-                'gl_PointSize = 0.6*u_scale.x;' +
-                'gl_Position = a_position*u_scale + u_translation;' +
-                'zz = a_position.z;' +
-                '}';
+        var vertCode = `
+                attribute vec4 a_position;
+                uniform vec4 u_translation;
+                uniform vec4 u_scale;
+                varying vec4 v_texCoord;
+                void main(void) {
+                  gl_Position = a_position*u_scale + u_translation;
+                  v_texCoord = a_position;
+                }
+                `;
 
         //Create a vertex shader object
         var vertShader = gl.createShader(gl.VERTEX_SHADER);
@@ -96,14 +75,54 @@
         gl.compileShader(vertShader);
 
         //Fragment shader source code
-        var fragCode =
-                'precision highp float;' +
-                'uniform sampler2D spect;' +
-                'varying float zz;'+
-                'void main(void) {' +
-                'vec4 color = texture2D(spect, vec2(zz, 0.0));' +
-                'gl_FragColor = color;' +
-                '}';
+        var fragCode = `
+                precision highp float;
+                uniform sampler2D spect;
+
+                uniform vec4 u_translation;
+                uniform vec4 u_scale;
+                uniform int max_iterations;
+
+                varying vec4 v_texCoord;
+                void main(void) {
+                  float clr = 0.0;
+
+                  float e = 4.0;
+                  const int MAX_ITER = 100;
+
+                  float x = v_texCoord.x*2.0;
+                  float y = v_texCoord.y*2.0;
+
+                  float rt = x;
+                  float it = y;
+
+                  float arg = x*x + y*y;
+
+                  int iter=0;
+
+                  for (int i=0; i <= MAX_ITER; i++) {
+                    iter=i;
+                    if (arg >= e || i >= max_iterations) {
+                      break;
+                    }
+                    float rt2 = rt*rt - it*it + x;
+                    it = 2.0*it*rt + y;
+                    rt = rt2;
+                    arg = rt*rt + it*it;
+                  }
+
+                  clr = float(iter)/float(max_iterations);
+
+                  vec4 color;
+
+                  if (iter == max_iterations) {
+                    color = vec4(0.0, 0.0, 0.0, 1.0);
+                  } else {
+                    color = texture2D(spect, vec2(clr, 0.0));
+                  }
+                  gl_FragColor = color;
+                }
+                `;
 
         // Create fragment shader object
         var fragShader = gl.createShader(gl.FRAGMENT_SHADER);
@@ -150,7 +169,7 @@
         var coord = gl.getAttribLocation(shaderProgram, "a_position");
 
         //point an attribute to the currently bound VBO
-        gl.vertexAttribPointer(coord, 4, gl.FLOAT, false, 0, 0);
+        gl.vertexAttribPointer(coord, 2, gl.FLOAT, false, 0, 0);
 
         //Enable the attribute
         gl.enableVertexAttribArray(coord);
@@ -160,10 +179,10 @@
         gl.clearColor(0.0, 0.0, 0.0, 1.0);
 
         // Enable the depth test
-        gl.enable(gl.DEPTH_TEST);
+//        gl.enable(gl.DEPTH_TEST);
 
         // Clear the color buffer bit
-        gl.clear(gl.COLOR_BUFFER_BIT);
+//        gl.clear(gl.COLOR_BUFFER_BIT);
 
         // Set the view port
         gl.viewport(0,0,canvas.width,canvas.height);
@@ -174,8 +193,10 @@
         // Set the scale.
         gl.uniform4fv(scaleLocation, scale);
 
+        gl.uniform1i(maxIterLocation, max_iter);
+
         // Draw the triangle
-        gl.drawArrays(gl.POINTS, 0, len);
+        gl.drawArrays(gl.TRIANGLES, 0, 6);
     }, 50);
 
 
@@ -230,7 +251,7 @@
             var delta_scale = - delta/1000.0;
             var old_scale_x = scale[0];
             var old_scale_y = scale[1];
-            scale[0] = scale[1] = scale[0] + delta_scale;
+            scale[0] = scale[1] = scale[0]*(1 + delta_scale);
             if (scale[0] < 0.95) {
                 scale[0] = scale[1] = 1.0;
             } else {
@@ -280,10 +301,10 @@
             }
             var iter_out = document.getElementById("iterations_out");
             iter_out.innerHTML = iter;
-            numOfIterations = iter;
+            max_iter = iter;
             translation = [0.0, 0.0, 0.0, 0.0];
             scale = [1.0, 1.0, 1.0, 1.0];
-            len = createGeometryAndBindToBuffer();
+            createGeometryAndBindToBuffer();
         };
     }
 
