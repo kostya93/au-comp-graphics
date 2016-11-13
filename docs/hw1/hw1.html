@@ -2,7 +2,8 @@
 <html>
 <head>
     <meta charset="utf-8">
-    <script src="libs/gl-matrix.js"></script>
+    <script src="../libs/gl-matrix.js"></script>
+    <script src="../libs/utils.js"></script>
 </head>
 <body style="margin:0;">
 <canvas width = "600" height = "600" id = "my_Canvas"></canvas>
@@ -22,7 +23,7 @@
 
     var gl = canvas.getContext('webgl');
 
-    var shaderProgram = initShaders();
+    var shaderProgram = initShaderProgram(gl, 'shaders/vertex.glsl', 'shaders/fragment.glsl');
 
     var translationLocation = gl.getUniformLocation(shaderProgram, "u_translation");
     var maxIterLocation = gl.getUniformLocation(shaderProgram, 'max_iterations');
@@ -51,108 +52,6 @@
             1, -1
         ];
         gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(positions), gl.STATIC_DRAW);
-    }
-
-    function initShaders() {
-        var vertCode = `
-                attribute vec4 a_position;
-                uniform vec4 u_translation;
-                uniform vec4 u_scale;
-                varying vec4 v_texCoord;
-                void main(void) {
-                  gl_Position = a_position*u_scale + u_translation;
-                  v_texCoord = a_position;
-                }
-                `;
-
-        //Create a vertex shader object
-        var vertShader = gl.createShader(gl.VERTEX_SHADER);
-
-        //Attach vertex shader source code
-        gl.shaderSource(vertShader, vertCode);
-
-        //Compile the vertex shader
-        gl.compileShader(vertShader);
-
-        //Fragment shader source code
-        var fragCode = `
-                precision highp float;
-                uniform sampler2D spect;
-
-                uniform vec4 u_translation;
-                uniform vec4 u_scale;
-                uniform int max_iterations;
-
-                varying vec4 v_texCoord;
-                void main(void) {
-                  float clr = 0.0;
-
-                  float e = 4.0;
-                  const int MAX_ITER = 100;
-
-                  float x = v_texCoord.x*2.0;
-                  float y = v_texCoord.y*2.0;
-
-                  float rt = x;
-                  float it = y;
-
-                  float arg = x*x + y*y;
-
-                  int iter=0;
-
-                  for (int i=0; i <= MAX_ITER; i++) {
-                    iter=i;
-                    if (arg >= e || i >= max_iterations) {
-                      break;
-                    }
-                    float rt2 = rt*rt - it*it + x;
-                    it = 2.0*it*rt + y;
-                    rt = rt2;
-                    arg = rt*rt + it*it;
-                  }
-
-                  clr = float(iter)/float(max_iterations);
-
-                  vec4 color;
-
-                  if (iter == max_iterations) {
-                    color = vec4(0.0, 0.0, 0.0, 1.0);
-                  } else {
-                    color = texture2D(spect, vec2(clr, 0.0));
-                  }
-                  gl_FragColor = color;
-                }
-                `;
-
-        // Create fragment shader object
-        var fragShader = gl.createShader(gl.FRAGMENT_SHADER);
-
-        // Attach fragment shader source code
-        gl.shaderSource(fragShader, fragCode);
-
-        // Compile the fragment shader
-        gl.compileShader(fragShader);
-
-        console.log(gl.getShaderInfoLog(fragShader));
-        console.log(gl.getShaderInfoLog(vertShader));
-
-        // Create a shader program object to store combined shader program
-        var sProgram = gl.createProgram();
-
-        // Attach a vertex shader
-        gl.attachShader(sProgram, vertShader);
-
-        // Attach a fragment shader
-        gl.attachShader(sProgram, fragShader);
-
-        // Link both programs
-        gl.linkProgram(sProgram);
-
-        // Use the combined shader program object
-        gl.useProgram(sProgram);
-        console.log(gl.getProgramInfoLog(sProgram));
-
-        return sProgram;
     }
 
     var draw = window.setInterval(function () {
