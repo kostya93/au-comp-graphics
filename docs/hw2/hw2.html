@@ -3,8 +3,67 @@
 <head>
     <meta charset="UTF-8">
     <title>Title</title>
+    <link rel="stylesheet" href="hw2.css">
 </head>
 <body>
+<canvas id = "my-canvas"></canvas>
+<script>
+    var canvas = document.getElementById('my-canvas');
+    var gl = canvas.getContext('webgl');
+    var shaderProgram = initShaderProgram(gl, 'shaders/vertex.glsl', 'shaders/fragment.glsl');
 
+    var cubePoints = [
+            -10.0,  10.0, -10.0,
+            -10.0, -10.0, -10.0,
+            10.0, -10.0, -10.0,
+            10.0, -10.0, -10.0,
+            10.0,  10.0, -10.0,
+            -10.0,  10.0, -10.0,
+
+            -10.0, -10.0,  10.0,
+            -10.0, -10.0, -10.0,
+            -10.0,  10.0, -10.0,
+            -10.0,  10.0, -10.0,
+            -10.0,  10.0,  10.0,
+            -10.0, -10.0,  10.0,
+
+            10.0, -10.0, -10.0,
+            10.0, -10.0,  10.0,
+            10.0,  10.0,  10.0,
+            10.0,  10.0,  10.0,
+            10.0,  10.0, -10.0,
+            10.0, -10.0, -10.0,
+
+            -10.0, -10.0,  10.0,
+            -10.0,  10.0,  10.0,
+            10.0,  10.0,  10.0,
+            10.0,  10.0,  10.0,
+            10.0, -10.0,  10.0,
+            -10.0, -10.0,  10.0,
+
+            -10.0,  10.0, -10.0,
+            10.0,  10.0, -10.0,
+            10.0,  10.0,  10.0,
+            10.0,  10.0,  10.0,
+            -10.0,  10.0,  10.0,
+            -10.0,  10.0, -10.0,
+
+            -10.0, -10.0, -10.0,
+            -10.0, -10.0,  10.0,
+            10.0, -10.0, -10.0,
+            10.0, -10.0, -10.0,
+            -10.0, -10.0,  10.0,
+            10.0, -10.0,  10.0
+    ];
+
+    function loadTextureCube() {
+        var imgs = new Array(6);
+        var urls = [
+            "textures/posx.jpg", "textures/negx.jpg",
+            "textures/posy.jpg", "textures/negy.jpg",
+            "textures/posz.jpg", "textures/negz.jpg"
+        ];
+    }
+</script>
 </body>
 </html>
