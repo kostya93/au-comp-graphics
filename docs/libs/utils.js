@@ -18,7 +18,7 @@ function getXmlHttp(){
     return xmlhttp;
 }
 
-function getShaderCode(path) {
+function getFileContent(path) {
     var xmlhttp = getXmlHttp();
     xmlhttp.open('GET', path, false);
     xmlhttp.send(null);
@@ -28,8 +28,8 @@ function getShaderCode(path) {
 }
 
 function initShaderProgram(gl, vertexShaderPath, fragmentShaderPath) {
-    var vertexShaderCode = getShaderCode(vertexShaderPath);
-    var fragmentShaderCode = getShaderCode(fragmentShaderPath);
+    var vertexShaderCode = getFileContent(vertexShaderPath);
+    var fragmentShaderCode = getFileContent(fragmentShaderPath);
 
     var vertexShader = gl.createShader(gl.VERTEX_SHADER);
     gl.shaderSource(vertexShader, vertexShaderCode);
