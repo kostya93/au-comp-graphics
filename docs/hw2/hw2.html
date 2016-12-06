@@ -114,10 +114,9 @@
         gl.useProgram(skybox.program);
 
         mat4.perspective(projection, Math.PI/4, canvas.width/canvas.height, 1, SKYBOX_SIZE*2);
-        modelview = rotator.getViewMatrix();
-
+        modelview = rotator.getViewMatrix(false);
         renderSkybox();
-
+        modelview = rotator.getViewMatrix();
         mat3.fromMat4(inverseViewTransform, modelview);
         mat3.invert(inverseViewTransform,inverseViewTransform);
 
