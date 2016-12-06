@@ -18,17 +18,21 @@ function Rotator(canvas, callback, viewDistance = 5, minViewDistance = 0, maxVie
     this.getViewDistance = function() {
         return viewDistance;
     };
-    this.getViewMatrix = function() {
+    this.getViewMatrix = function(vd = true) {
         var cosX = Math.cos(rotateX/180*Math.PI);
         var sinX = Math.sin(rotateX/180*Math.PI);
         var cosY = Math.cos(rotateY/180*Math.PI);
         var sinY = Math.sin(rotateY/180*Math.PI);
-        return [
+        var res = [
             cosY, sinX * sinY, -cosX * sinY, 0,
             0, cosX, sinX, 0,
             sinY, -sinX * cosY, cosX * cosY, 0,
-            0, 0, -viewDistance, 1
+            0, 0, 0, 1
         ];
+        if (vd) {
+            res[14] -= viewDistance;
+        }
+        return res;
     };
     var prevX, prevY;
     var dragging = false;
