@@ -4,6 +4,14 @@
 
 function main() {
     var canvas = document.getElementById('my-canvas');
+    var modeSelect = document.getElementById('mode');
+    modeSelect.onchange = () => {
+        mode = +modeSelect.value;
+    };
+    var lightsSelect = document.getElementById('lights');
+    lightsSelect.onchange = () => {
+        num_of_lights = +lightsSelect.value;
+    };
     var gl = canvas.getContext('webgl');
 
     var shaderProgram = initShaderProgram(gl, 'shaders/vertex.glsl', 'shaders/fragment.glsl');
@@ -18,12 +26,18 @@ function main() {
     var u_modelview = gl.getUniformLocation(shaderProgram, "modelview");
     var u_normalMatrix = gl.getUniformLocation(shaderProgram, "normalMatrix");
 
+    var u_num_of_lights = gl.getUniformLocation(shaderProgram, "num_of_lights");
+    var u_mode = gl.getUniformLocation(shaderProgram, "mode");
     var u_lightPoses = [gl.getUniformLocation(shaderProgram, "lightPos_0"),
-                        gl.getUniformLocation(shaderProgram, "lightPos_1")];
+                        gl.getUniformLocation(shaderProgram, "lightPos_1"),
+                        gl.getUniformLocation(shaderProgram, "lightPos_2")];
 
+    var num_of_lights = 1;
+    var mode = 1;
     var lightAngle = 0.0;
     var lightTrajectoryRadius = 20;
     var lightPoses = [[0.0, 0.0, 0.0],
+                      [0.0, 0.0, 0.0],
                       [0.0, 0.0, 0.0]];
 
     var projection = mat4.create();
@@ -46,6 +60,8 @@ function main() {
 
         gl.useProgram(shaderProgram);
         gl.uniformMatrix4fv(u_projection, false, projection);
+        gl.uniform1i(u_num_of_lights, num_of_lights);
+        gl.uniform1i(u_mode, mode);
         setLights();
         gl.enableVertexAttribArray(a_position);
         gl.enableVertexAttribArray(a_normal);
@@ -62,6 +78,9 @@ function main() {
 
         lightPoses[1][0] = lightTrajectoryRadius*Math.cos(-lightAngle);
         lightPoses[1][1] = lightTrajectoryRadius*Math.sin(-lightAngle);
+
+        lightPoses[2][0] = lightTrajectoryRadius*Math.cos(-lightAngle);
+        lightPoses[2][2] = lightTrajectoryRadius*Math.sin(-lightAngle);
         draw();
     }
 
@@ -135,5 +154,3 @@ function main() {
         };
     }
 }
-
-
