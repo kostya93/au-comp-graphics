@@ -7,7 +7,7 @@ function main() {
     bindWheelListener(canvas);
     var gl = canvas.getContext('webgl');
     var shaderProgram = initShaderProgram(gl, 'shaders/vertex.glsl', 'shaders/fragment.glsl');
-    var rotator = new Rotator(canvas, draw, 3, 0.5, 4, 0, 180);
+    var rotator = new Rotator(canvas, draw, 3, 0.5, 4, 0, 0);
 
     var u_diffuseMap = gl.getUniformLocation(shaderProgram, "diffuseMap");
     var u_normalMap = gl.getUniformLocation(shaderProgram, "normalMap");
@@ -26,6 +26,8 @@ function main() {
     var a_tangent = gl.getAttribLocation(shaderProgram, "a_tangent");
     var a_bitangent = gl.getAttribLocation(shaderProgram, "a_bitangent");
 
+    var u_numLayers = gl.getUniformLocation(shaderProgram, "u_numLayers");
+
     var tx_diffuseMap = gl.createTexture();
     var tx_normalMap = gl.createTexture();
     var tx_depthMap = gl.createTexture();
@@ -34,7 +36,12 @@ function main() {
     var view = mat4.create();
     var model = mat4.create();
 
+    var numLayers = 10;
+    initInputs(numLayers);
+
     var light = [1.0,1.0,1.0];
+    var lightAngle = 0;
+    var lightTrajectoryRadius = 2;
 
     var imageUrls = [
         'textures/1.png',
@@ -47,7 +54,8 @@ function main() {
 
     loadImages(imageUrls);
 
-    setInterval(draw, 1000);
+    setInterval(draw, 17);
+    setInterval(updateLight, 17);
 
     var poses = [];
     var norms = [];
@@ -56,12 +64,6 @@ function main() {
     var btgs = [];
 
     prepareVecs();
-
-    console.log(poses);
-    console.log(norms);
-    console.log(coords);
-    console.log(tgs);
-    console.log(btgs);
 
     var posBuffer = gl.createBuffer();
     var normBuffer = gl.createBuffer();
@@ -86,7 +88,6 @@ function main() {
 
 
     function draw() {
-        console.log('draw');
         if (!imageLoaded) {
             return;
         }
@@ -110,6 +111,8 @@ function main() {
         gl.uniformMatrix4fv(u_model, false, model);
         gl.uniform3fv(u_viewPos, rotator.getPosition());
         gl.uniform3fv(u_light, light);
+
+        gl.uniform1f(u_numLayers, numLayers);
 
         gl.uniform1i(u_diffuseMap, 0);
         gl.uniform1i(u_normalMap, 1);
@@ -324,6 +327,34 @@ function main() {
             var delta = e.deltaY || e.detail || e.wheelDelta;
             rotator.setViewDistance(rotator.getViewDistance() + delta/200);
         }
+    }
+
+    function initInputs(initNumOflayers) {
+        var layersInput = document.getElementById('layers');
+        layersInput.value = initNumOflayers;
+        layersInput.oninput = _callback;
+
+        function _callback() {
+            numLayers = layersInput.value;
+            if (numLayers < 0) {
+                numLayers = 0;
+            }
+            if (numLayers > 100) {
+                numLayers = 100;
+            }
+            layersInput.value = numLayers;
+        }
+    }
+    var t = 0;
+    function updateLight() {
+        t += 0.015;
+        var A = 2;
+        var B = 2;
+        var a = 3;
+        var b = 2;
+        var s = Math.PI/2;
+        light[0] = A*Math.sin(a*t + s);
+        light[1] = B*Math.sin(b*t);
     }
 
 }
