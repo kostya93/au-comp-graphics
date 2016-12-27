@@ -6,10 +6,11 @@ function Rotator(canvas,
                  rotateX = 0,
                  rotateY = 0,
                  holdX = false,
-                 holdY = false) {
+                 holdY = false,
+                 x_limit = 90,
+                 y_limit = 90) {
     canvas.addEventListener("mousedown", doMouseDown, false);
     var canvas_rect = canvas.getBoundingClientRect();
-    var X_LIMIT = 90;
     var DEGREE_PER_PIXEL = 90/canvas.height;
     this.setViewDistance = function( dist ) {
         viewDistance = dist;
@@ -83,7 +84,8 @@ function Rotator(canvas,
             newRotY += DEGREE_PER_PIXEL * (x - prevX);
         }
 
-        newRotX = Math.max(-X_LIMIT, Math.min(X_LIMIT,newRotX));
+        newRotX = Math.max(-x_limit, Math.min(x_limit,newRotX));
+        newRotY = Math.max(-y_limit, Math.min(y_limit,newRotY));
         prevX = x;
         prevY = y;
         if (newRotX != rotateX || newRotY != rotateY) {
