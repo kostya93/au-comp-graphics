@@ -26,6 +26,18 @@ function Rotator(canvas,
     this.getViewDistance = function() {
         return viewDistance;
     };
+    this.getRotX = function () {
+        return rotateX;
+    };
+    this.getRotY = function () {
+        return rotateY;
+    };
+
+    this.getPosition = function () {
+        var vd = this.getViewMatrix();
+        mat4.invert(vd, vd);
+        return [vd[12], vd[13], vd[14]];
+    };
     this.getViewMatrix = function(vd = true) {
         var cosX = Math.cos(rotateX/180*Math.PI);
         var sinX = Math.sin(rotateX/180*Math.PI);

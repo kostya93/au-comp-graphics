@@ -39,8 +39,8 @@ function initShaderProgram(gl, vertexShaderPath, fragmentShaderPath) {
     gl.shaderSource(fragmentShader, fragmentShaderCode);
     gl.compileShader(fragmentShader);
 
-    // console.log(gl.getShaderInfoLog(fragmentShader));
-    // console.log(gl.getShaderInfoLog(vertexShader));
+    console.log(gl.getShaderInfoLog(fragmentShader));
+    console.log(gl.getShaderInfoLog(vertexShader));
 
     var shaderProgram = gl.createProgram();
 
@@ -49,7 +49,7 @@ function initShaderProgram(gl, vertexShaderPath, fragmentShaderPath) {
     gl.linkProgram(shaderProgram);
     gl.useProgram(shaderProgram);
 
-    // console.log(gl.getProgramInfoLog(shaderProgram));
+    console.log(gl.getProgramInfoLog(shaderProgram));
 
     return shaderProgram;
 }
